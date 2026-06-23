@@ -8,7 +8,9 @@
     "vite": "latest",
     "typescript": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
   },
   "devDependencies": {}
 }

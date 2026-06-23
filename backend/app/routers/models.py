@@ -5,13 +5,24 @@ from ..database import get_db
 from ..llm.keys import has_api_key, save_api_key
 from ..llm.providers import LLMConfig, call_openai_compatible
 from ..models import ModelProvider
-from ..schemas import ModelProviderCreate
 
 router = APIRouter(prefix="/api/models", tags=["models"])
 
 
 class ApiKeyPayload(BaseModel):
     api_key: str
+
+
+class ModelProviderPayload(BaseModel):
+    id: int | None = None
+    name: str
+    provider_type: str = "openai_compatible"
+    base_url: str
+    api_key_env: str
+    model_name: str
+    enabled: bool = True
+    is_default: bool = False
+    purpose: str = "writing"
 
 
 def serialize(row: ModelProvider) -> dict:
@@ -37,15 +48,18 @@ def list_models(db: Session = Depends(get_db)):
 
 
 @router.post("")
-def upsert_model(payload: ModelProviderCreate, db: Session = Depends(get_db)):
-    existing = db.query(ModelProvider).filter(ModelProvider.name == payload.name).first()
+def upsert_model(payload: ModelProviderPayload, db: Session = Depends(get_db)):
+    data = payload.model_dump(exclude={"id"})
+    existing = db.get(ModelProvider, payload.id) if payload.id else None
+    if not existing:
+        existing = db.query(ModelProvider).filter(ModelProvider.name == payload.name).first()
     if existing:
-        for key, value in payload.model_dump().items():
+        for key, value in data.items():
             setattr(existing, key, value)
         db.commit()
         db.refresh(existing)
         return serialize(existing)
-    model = ModelProvider(**payload.model_dump())
+    model = ModelProvider(**data)
     db.add(model)
     db.commit()
     db.refresh(model)

@@ -39,16 +39,24 @@
 
 ## 快速启动
 
-### Windows 一键启动
+### 一行安装并启动
+
+在 Windows PowerShell 运行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+git clone https://github.com/weeduon/ai-short-drama-studio.git; cd ai-short-drama-studio; powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 启动后访问：
 
 - 前端：`http://localhost:5173`
 - 后端 API：`http://localhost:8000/docs`
+
+### 已经克隆仓库时
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
 
 ### Docker 手动启动
 
@@ -115,14 +123,6 @@ backend/app/video_providers/runway.py
 backend/app/video_providers/veo.py
 backend/app/video_providers/hailuo.py
 backend/app/video_providers/seedance.py
-```
-
-## 远程一行安装
-
-仓库公开后，可以在 Windows PowerShell 使用：
-
-```powershell
-irm https://raw.githubusercontent.com/weeduon/ai-short-drama-studio/main/install.ps1 | iex
 ```
 
 ## API 示例

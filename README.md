@@ -44,13 +44,23 @@
 在 Windows PowerShell 运行：
 
 ```powershell
-git clone https://github.com/weeduon/ai-short-drama-studio.git; cd ai-short-drama-studio; powershell -ExecutionPolicy Bypass -File .\install.ps1
+cd $env:USERPROFILE; git clone https://github.com/weeduon/ai-short-drama-studio.git; if ($LASTEXITCODE -ne 0) { throw 'git clone 失败，请检查 GitHub 网络连接或改用 ZIP 下载' }; cd ai-short-drama-studio; powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 启动后访问：
 
 - 前端：`http://localhost:5173`
 - 后端 API：`http://localhost:8000/docs`
+
+### GitHub 网络不稳定时，改用 ZIP
+
+```powershell
+cd $env:USERPROFILE
+Invoke-WebRequest -Uri "https://github.com/weeduon/ai-short-drama-studio/archive/refs/heads/main.zip" -OutFile "ai-short-drama-studio.zip"
+Expand-Archive -Force ".\ai-short-drama-studio.zip" "."
+cd ".\ai-short-drama-studio-main"
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
 
 ### 已经克隆仓库时
 

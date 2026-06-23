@@ -41,6 +41,19 @@ export type Role = {
   quality_bar: string
 }
 
+export type ModelProvider = {
+  id: number
+  name: string
+  provider_type: string
+  base_url: string
+  api_key_env: string
+  model_name: string
+  enabled: boolean
+  is_default: boolean
+  purpose: string
+  has_api_key: boolean
+}
+
 export type VideoTask = {
   id: number
   project_id: number
@@ -62,6 +75,10 @@ export const api = {
   artifacts: (projectId: number) => request<Artifact[]>(`/api/projects/${projectId}/artifacts`),
   runWorkflow: (projectId: number, episodeCount: number) => request<Artifact[]>(`/api/projects/${projectId}/run`, { method: 'POST', body: JSON.stringify({ episode_count: episodeCount, use_cross_review: true }) }),
   crossReview: (artifactId: number) => request<Record<string, unknown>>('/api/review/cross', { method: 'POST', body: JSON.stringify({ artifact_id: artifactId }) }),
+  models: () => request<ModelProvider[]>('/api/models'),
+  saveModel: (payload: Partial<ModelProvider>) => request<ModelProvider>('/api/models', { method: 'POST', body: JSON.stringify(payload) }),
+  saveModelSecret: (id: number, apiKey: string) => request<{ ok: boolean }>(`/api/models/${id}/secret`, { method: 'POST', body: JSON.stringify({ api_key: apiKey }) }),
+  testModel: (id: number) => request<{ ok: boolean; reply: string }>(`/api/models/${id}/test`, { method: 'POST' }),
   videoTasks: (projectId?: number) => request<VideoTask[]>(`/api/video-tasks${projectId ? `?project_id=${projectId}` : ''}`),
   createVideoTask: (payload: Record<string, unknown>) => request<VideoTask>('/api/video-tasks', { method: 'POST', body: JSON.stringify(payload) }),
   runVideoTask: (id: number) => request<VideoTask>(`/api/video-tasks/${id}/run`, { method: 'POST' }),

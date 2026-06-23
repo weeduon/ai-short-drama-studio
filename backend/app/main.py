@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import Base, SessionLocal, engine
+from .llm.keys import load_keys_to_env
 from .routers import models, projects, review, roles, video
 from .seed import seed_defaults
 
 settings = get_settings()
+load_keys_to_env()
 Base.metadata.create_all(bind=engine)
 with SessionLocal() as db:
     seed_defaults(db)

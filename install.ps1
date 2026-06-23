@@ -45,7 +45,7 @@ Set-Location "$Root\frontend"
 npm install
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$Root\backend'; .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$Root\frontend'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$Root\frontend'; `$env:VITE_API_BASE='http://127.0.0.1:8000'; npx vite --host 0.0.0.0"
 
 Write-Host "已启动：" -ForegroundColor Cyan
 Write-Host "前端: http://localhost:5173"

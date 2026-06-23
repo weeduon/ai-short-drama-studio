@@ -19,6 +19,12 @@ def _write_all(data: dict[str, str]) -> None:
     KEY_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def load_keys_to_env() -> None:
+    for name, value in _read_all().items():
+        if value and name.isidentifier():
+            os.environ.setdefault(name, value)
+
+
 def resolve_api_key(env_name: str, provider_name: str | None = None) -> str | None:
     env_value = os.getenv(env_name)
     if env_value:
@@ -30,6 +36,7 @@ def resolve_api_key(env_name: str, provider_name: str | None = None) -> str | No
 def save_api_key(env_name: str, api_key: str, provider_name: str | None = None) -> None:
     data = _read_all()
     data[env_name] = api_key
+    os.environ[env_name] = api_key
     if provider_name:
         data[provider_name] = api_key
     _write_all(data)

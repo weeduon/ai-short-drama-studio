@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, PlugZap, Save, TestTube2 } from 'lucide-react'
+import { CheckCircle2, Pencil, PlugZap, Save, TestTube2 } from 'lucide-react'
 import { api, ModelProvider } from './api'
 
-type Draft = Partial<ModelProvider> & { apiKey?: string }
+type Draft = Partial<ModelProvider>
 
 const starterTips = [
   '先填 API Key，再点保存密钥。',
@@ -11,18 +11,21 @@ const starterTips = [
   '测试通过后，再回到创作台运行 Agent。',
 ]
 
+const emptyDraft: Draft = {
+  name: '自定义模型',
+  provider_type: 'openai_compatible',
+  base_url: 'https://api.example.com/v1',
+  api_key_env: 'CUSTOM_API_KEY',
+  model_name: 'your-model-name',
+  enabled: true,
+  is_default: false,
+  purpose: 'writing',
+}
+
 export default function ModelSettings() {
   const [models, setModels] = useState<ModelProvider[]>([])
-  const [draft, setDraft] = useState<Draft>({
-    name: '自定义模型',
-    provider_type: 'openai_compatible',
-    base_url: 'https://api.example.com/v1',
-    api_key_env: 'CUSTOM_API_KEY',
-    model_name: 'your-model-name',
-    enabled: true,
-    is_default: false,
-    purpose: 'writing',
-  })
+  const [draft, setDraft] = useState<Draft>(emptyDraft)
+  const [keyValues, setKeyValues] = useState<Record<number, string>>({})
   const [message, setMessage] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
 
@@ -37,11 +40,12 @@ export default function ModelSettings() {
   async function saveModel() {
     const saved = await api.saveModel(draft)
     setMessage(`已保存模型配置：${saved.name}`)
-    setDraft({ ...draft, id: saved.id })
+    setDraft(saved)
     await load()
   }
 
-  async function saveKey(model: ModelProvider, apiKey: string) {
+  async function saveKey(model: ModelProvider) {
+    const apiKey = keyValues[model.id] || ''
     if (!apiKey.trim()) {
       setMessage('请先输入 API Key。人类经常忘这一步，模型也不能靠空气付费。')
       return
@@ -50,6 +54,7 @@ export default function ModelSettings() {
     try {
       await api.saveModelSecret(model.id, apiKey)
       setMessage(`已保存 ${model.name} 的 API Key。密钥只保存在本地 data/model_keys.json。`)
+      setKeyValues({ ...keyValues, [model.id]: '' })
       await load()
     } catch (err) {
       setMessage((err as Error).message)
@@ -87,7 +92,7 @@ export default function ModelSettings() {
 
       <div className="grid settingsGrid">
         <div className="card">
-          <h3>新增 / 修改模型</h3>
+          <h3>{draft.id ? '修改模型配置' : '新增模型配置'}</h3>
           <label>显示名称<input value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></label>
           <label>接口地址 base_url<input value={draft.base_url || ''} onChange={(e) => setDraft({ ...draft, base_url: e.target.value })} /></label>
           <label>模型名 model_name<input value={draft.model_name || ''} onChange={(e) => setDraft({ ...draft, model_name: e.target.value })} /></label>
@@ -100,7 +105,10 @@ export default function ModelSettings() {
             </select>
           </label>
           <label className="toggle"><input type="checkbox" checked={draft.enabled ?? true} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} />启用这个模型</label>
-          <button onClick={saveModel}><Save size={16} /> 保存模型配置</button>
+          <div className="actions">
+            <button onClick={saveModel}><Save size={16} /> 保存配置</button>
+            <button onClick={() => setDraft(emptyDraft)}>新建空白配置</button>
+          </div>
         </div>
 
         <div className="card modelHelp">
@@ -114,28 +122,26 @@ export default function ModelSettings() {
       </div>
 
       <div className="modelList">
-        {models.map((model) => {
-          let keyValue = ''
-          return (
-            <article className="modelCard" key={model.id}>
-              <div className="modelTitle">
-                <div>
-                  <b>{model.name}</b>
-                  <small>{model.base_url}</small>
-                </div>
-                <span className={model.has_api_key ? 'status ok' : 'status'}>{model.has_api_key ? '已配置密钥' : '未配置密钥'}</span>
+        {models.map((model) => (
+          <article className="modelCard" key={model.id}>
+            <div className="modelTitle">
+              <div>
+                <b>{model.name}</b>
+                <small>{model.base_url}</small>
               </div>
-              <div className="modelMeta">
-                <span>{model.model_name}</span><span>{model.api_key_env}</span><span>{model.purpose}</span>
-              </div>
-              <label>API Key<input type="password" placeholder="粘贴密钥，保存后不会在页面显示" onChange={(e) => { keyValue = e.target.value }} /></label>
-              <div className="actions">
-                <button disabled={busyId === model.id} onClick={() => saveKey(model, keyValue)}><CheckCircle2 size={16} /> 保存密钥</button>
-                <button disabled={busyId === model.id || !model.has_api_key} onClick={() => test(model)}><TestTube2 size={16} /> 测试连接</button>
-              </div>
-            </article>
-          )
-        })}
+              <span className={model.has_api_key ? 'status ok' : 'status'}>{model.has_api_key ? '已配置密钥' : '未配置密钥'}</span>
+            </div>
+            <div className="modelMeta">
+              <span>{model.model_name}</span><span>{model.api_key_env}</span><span>{model.purpose}</span>
+            </div>
+            <label>API Key<input type="password" value={keyValues[model.id] || ''} placeholder="粘贴密钥，保存后不会在页面显示" onChange={(e) => setKeyValues({ ...keyValues, [model.id]: e.target.value })} /></label>
+            <div className="actions">
+              <button onClick={() => setDraft(model)}><Pencil size={16} /> 编辑配置</button>
+              <button disabled={busyId === model.id} onClick={() => saveKey(model)}><CheckCircle2 size={16} /> 保存密钥</button>
+              <button disabled={busyId === model.id || !model.has_api_key} onClick={() => test(model)}><TestTube2 size={16} /> 测试连接</button>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   )
